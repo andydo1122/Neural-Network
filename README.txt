@@ -1,1 +1,2 @@
-// Learning and testing a Neural Network
+// Learning and testing a Neural Network. 
+// Credit to Dave Miller

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 
@@ -17,20 +18,51 @@ typedef vector<Neuron> Layer;
 // CLASS NEURON-----------------------------------------------
 class Neuron{
     public:
-        Neuron(unsigned numOutputs);
+        Neuron(unsigned numOutputs, unsigned myIndex);
+        void setOutputVal(double val){ n_outputVal = val;}
+        double getOutputVal(void) {return n_outputVal;}
+        void feedForward(const Layer &prevLayer);
     
     private:
+        static double transferFunction(double x);
+        static double transferFunctionDerivative(double x);
         static double randomWeight(void) { return rand() / double(RAND_MAX);}
         double n_outputVal;
         vector<Connection> n_outputWeights;
+        unsigned n_myIndex;
 
 };
 
-Neuron::Neuron(unsigned numOutputs){
+double Neuron:: transferFunction(double x){
+    // tanh - output range (-1.0..1.0)
+    return tanh(x);
+}
+
+double Neuron::transferFunctionDerivative(double x){
+    return 1.0 - x * x; 
+}
+
+void Neuron::feedForward(const Layer &prevLayer){
+    double sum = 0.0;
+
+    // Sum the previous layer's outputs which are our inputs...
+    // Include the bias node from previous layer.
+
+    for( unsigned n = 0; n < prevLayer.size(); ++n){
+        sum += prevLayer[n].getOutputVal() *
+                prevLayer[n].n_outputWeights[n_myIndex].weight;
+    }
+
+    n_outputVal = Neuron::transferFunction(sum);
+}
+
+Neuron::Neuron(unsigned numOutputs, unsigned myIndex){
     for(unsigned c = 0; c < numOutputs; ++c){
         n_outputWeights.push_back(Connection());
         n_outputWeights.back().wight = randomWeight();
     }
+
+    n_myIndex = myIndex;
 }
 
 // CLASS NET--------------------------------------------------
@@ -38,14 +70,28 @@ Neuron::Neuron(unsigned numOutputs){
 class Net{
     public:
         Net(const vector<unsigned> &topology);
-        void feedForward(const vector<double> &inputVals) {};
-        void backProp(const vector<double> &targetVals) {};
+        void feedForward(const vector<double> &inputVals);
+        void backProp(const vector<double> &targetVals);
         void getResults(vector<double> &resultVals) const {};
 
     private:
         vector<Layer> n_layers; // n_layers[layerNum][neuronNum]
 
 };
+
+void Net::backProp(const vector<double> &targetVals){
+    // Calculate overall net error(RMS/ROOT MEAN SQUARE of output neuron errors)
+    Layer &outputLayer = n_layers.back();
+    n_error = 0.0
+
+    // calculate output layer gradients
+
+    // calculate gradients on hidden layers
+
+    // for all layers from outputs to first hidden layer.
+    // update conncection weights 
+
+}
 
 void Net::feedForward(const vector<double> &inputVals){
     assert(inputVals.size() == n_layers[0].size() - 1);
@@ -57,8 +103,9 @@ void Net::feedForward(const vector<double> &inputVals){
 
     // FOrward propagate
     for( unsigned layerNum = 1; layerNum < n_layers.size(); ++layerNum){
+        layer &prevLayer = n_layers[layerNum - 1];
         for(unsigned n = 0; n < n_layers[layerNum].size() - 1; ++n){
-            n_layers[layerNum][n].feedForward(); 
+            n_layers[layerNum][n].feedForward(prevLayer); 
         }
     }
 }
@@ -73,7 +120,7 @@ Net::Net(const vector<unsigned> &topology){
         // with neurons, and add a bias neuron to the layer
 
         for(unsigned neuronNum = 0; neuronNum <= topology[layerNum]; ++neuronNum){
-            n_layers.back().push_back(Neuron()); 
+            n_layers.back().push_back(Neuron()numOutputs, neuronNum); 
             cout << "Neuron is made" << endl; 
         }
     }
