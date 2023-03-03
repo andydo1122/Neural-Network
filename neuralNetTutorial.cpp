@@ -3,7 +3,7 @@
 
 using namespace std;
 
-class Neuron;
+class Neuron {};
 typedef vector<Neuron> Layer;
 
 class Net{
@@ -28,6 +28,7 @@ Net::Net(const vector<unsigned> &topology){
 
         for(unsigned neuronNum = 0; neuronNum <= topology[layerNum]; ++neuronNum){
             n_layers.back().push_back(Neuron()); 
+            cout << "Neuron is made" << endl; 
         }
     }
 }
@@ -36,6 +37,9 @@ int main(){
 
     // e.g. (3, 2, 1)
     vector<unsigned> topology;
+    topology.push_back(3);
+    topology.push_back(2);
+    topology.push_back(1);
     Net myNet(topology);
     
     vector<double> inputVals;
