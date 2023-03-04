@@ -193,8 +193,9 @@ void Net::backProp(const vector<double> &targetVals){
 }
 
 void Net::feedForward(const vector<double> &inputVals){
+    cout << inputVals.size() << " " << n_layers[0].size() - 1 << endl;
     assert(inputVals.size() == n_layers[0].size() - 1);
-
+    cout << "Neuron is fed" << endl;
     // assign (latch) the input values into input neurons
     for(unsigned i = 0; i < inputVals.size(); ++i){
         n_layers[0][i].setOutputVal(inputVals[i]);
@@ -232,19 +233,34 @@ int main(){
 
     // e.g. (3, 2, 1)
     vector<unsigned> topology;
-    topology.push_back(3);
     topology.push_back(2);
+    topology.push_back(4);
     topology.push_back(1);
     Net myNet(topology);
     
     vector<double> inputVals;
+    inputVals.push_back(10);
+    inputVals.push_back(20);
     myNet.feedForward(inputVals);
 
     // During training
-    vector<double> targetVals;
+    cout << "Here at training" << endl;
+    vector<double> targetVals = inputVals;
+    targetVals.push_back(3);
+    targetVals.push_back(5);
+    targetVals.push_back(1);
+    targetVals.push_back(2);
     myNet.backProp(targetVals);
+    cout << "BACK_PROP: ----" << endl;
+    for(int i = 0; i < targetVals.size(); ++i){
+        cout << targetVals[i] << endl;
+    }
 
     // Neural network's outputs
     vector<double> resultVals;
     myNet.getResults(resultVals);
+    cout << "RESULTS: ----" << endl;
+    for(int i = 0; i < resultVals.size(); ++i){
+        cout << resultVals[i] << endl;
+    }
 }
