@@ -128,15 +128,18 @@ class Net{
         void feedForward(const vector<double> &inputVals);
         void backProp(const vector<double> &targetVals);
         void getResults(vector<double> &resultVals) const;
+        double getRecentAverageError(void) const { return n_recentAverageError; }
 
     private:
         vector<Layer> n_layers; // n_layers[layerNum][neuronNum]
         double n_error;
         double n_recentAverageError;
-        double n_recentAverageSmoothingFactor;
+        static double n_recentAverageSmoothingFactor;
 
 
 };
+
+double Net::n_recentAverageSmoothingFactor = 100.0; 
 
 void Net::getResults(vector<double> &resultVals) const {
     resultVals.clear();
@@ -239,19 +242,20 @@ int main(){
     Net myNet(topology);
     bool pass = false;
     int count = 0;
-
+    vector<double> inputVals, targetVals, resultVals; 
     while(!pass){
-        vector<double> inputVals;
+        //vector<double> inputVals;
         int n1 = (int) (2.0 * rand() / double(RAND_MAX));
         int n2 = (int) (2.0 * rand() / double(RAND_MAX));
         double n3 = n1;
         double n4 = n2; 
+        inputVals.clear();
         inputVals.push_back(n3);
-        inputVals.push_back(n2);
+        inputVals.push_back(n4);
         myNet.feedForward(inputVals);
         cout << "INPUT VALUE----" << n3 << " " << n4 << endl;
 
-        // During training
+        /*// During training
         cout << "Here at training" << endl;
         vector<double> targetVals;
         double target = (double) (n1^n2);
@@ -260,10 +264,12 @@ int main(){
         cout << "BACK_PROP: ----" << endl;
         for(int i = 0; i < targetVals.size(); ++i){
             cout << targetVals[i] << endl;
-        }
+        }*/
 
         // Neural network's outputs
-        vector<double> resultVals;
+        double target = (double) (n1 | n2);
+        cout << "TARGET: " << target << endl;
+        //vector<double> resultVals;
         myNet.getResults(resultVals);
         cout << "RESULTS: ----" << endl;
         for(int i = 0; i < resultVals.size(); ++i){
@@ -273,6 +279,20 @@ int main(){
                 pass = true; 
             }
         }
+
+        // During training
+        //cout << "Here at training" << endl;
+        //vector<double> targetVals;
+        targetVals.clear(); 
+        targetVals.push_back( target ); 
+        myNet.backProp(targetVals);
+        cout << "BACK_PROP: ----" << endl;
+        //for(int i = 0; i < targetVals.size(); ++i){
+        //    cout << targetVals[i] << endl;
+        //}
+
+        cout << "NET RECENT AVERAGE ERROR: " << myNet.getRecentAverageError() << endl;
+
         cout << "COUNT: " << count++ << endl; 
     }
 
