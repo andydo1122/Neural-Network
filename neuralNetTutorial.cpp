@@ -20,15 +20,15 @@ class Neuron{
     public:
         Neuron(unsigned numOutputs, unsigned myIndex);
         void setOutputVal(double val){ n_outputVal = val;}
-        double getOutputVal(void) {return n_outputVal;}
+        double getOutputVal(void) const {return n_outputVal;}
         void feedForward(const Layer &prevLayer);
         void calcOutputGradients(double targetVal);
-        void calcHiddentGradients(const Layer &nextLayer);
-        void updateInputWeights(layer &prevLayer);
+        void calcHiddenGradients(const Layer &nextLayer);
+        void updateInputWeights(Layer &prevLayer);
     
     private:
         static double eta; // [0.0 ... 1.0] overall net training weight
-        static double alpha // [0.0... n] multiplier of last weight change(momentum)
+        static double alpha; // [0.0... n] multiplier of last weight change(momentum)
 
         static double transferFunction(double x);
         static double transferFunctionDerivative(double x);
@@ -50,13 +50,13 @@ void Neuron::updateInputWeights(Layer &prevLayer){
 
     for(unsigned n = 0; n < prevLayer.size(); ++n){
         Neuron &neuron = prevLayer[n];
-        double oldDeltaWeight = neuron.n_outputWeights[n_myIndex].deltaWeights;
+        double oldDeltaWeight = neuron.n_outputWeights[n_myIndex].deltaWeight;
 
         
         double newDeltaWeight = 
             // individual input. magnified by gradient and train rate;
             eta 
-            * neuron_getOutputVal()
+            * neuron.getOutputVal()
             * n_gradient
             // Also add momentum = a fraction of the previous delta weight
             + alpha
@@ -75,10 +75,10 @@ double Neuron::sumDOW(const Layer &nextLayer) const{
         sum += n_outputWeights[n].weight * nextLayer[n].n_gradient;
     }
 
-    returb sum;
+    return sum;
 }
 
-void Neuron::calcHiddentGradients(const Layer &nextLayer){
+void Neuron::calcHiddenGradients(const Layer &nextLayer){
     double dow = sumDOW(nextLayer);
     n_gradient = dow * Neuron::transferFunctionDerivative(n_outputVal);
 }
@@ -114,7 +114,7 @@ void Neuron::feedForward(const Layer &prevLayer){
 Neuron::Neuron(unsigned numOutputs, unsigned myIndex){
     for(unsigned c = 0; c < numOutputs; ++c){
         n_outputWeights.push_back(Connection());
-        n_outputWeights.back().wight = randomWeight();
+        n_outputWeights.back().weight = randomWeight();
     }
 
     n_myIndex = myIndex;
@@ -127,7 +127,7 @@ class Net{
         Net(const vector<unsigned> &topology);
         void feedForward(const vector<double> &inputVals);
         void backProp(const vector<double> &targetVals);
-        void getResults(vector<double> &resultVals) const {};
+        void getResults(vector<double> &resultVals) const;
 
     private:
         vector<Layer> n_layers; // n_layers[layerNum][neuronNum]
@@ -169,9 +169,9 @@ void Net::backProp(const vector<double> &targetVals){
     }
 
     // calculate gradients on hidden layers
-    for(unsigned layerNum = n_layers.size() - 2; layer> 0; --layerNum){
+    for(unsigned layerNum = n_layers.size() - 2; layerNum> 0; --layerNum){
         Layer &hiddenLayer = n_layers[layerNum];
-        Layer &nextLayer = n_layer[layerNum + 1];
+        Layer &nextLayer = n_layers[layerNum + 1];
 
         for(unsigned n = 0; n < hiddenLayer.size(); ++n){
             hiddenLayer[n].calcHiddenGradients(nextLayer);
@@ -202,7 +202,7 @@ void Net::feedForward(const vector<double> &inputVals){
 
     // FOrward propagate
     for( unsigned layerNum = 1; layerNum < n_layers.size(); ++layerNum){
-        layer &prevLayer = n_layers[layerNum - 1];
+        Layer &prevLayer = n_layers[layerNum - 1];
         for(unsigned n = 0; n < n_layers[layerNum].size() - 1; ++n){
             n_layers[layerNum][n].feedForward(prevLayer); 
         }
@@ -219,9 +219,12 @@ Net::Net(const vector<unsigned> &topology){
         // with neurons, and add a bias neuron to the layer
 
         for(unsigned neuronNum = 0; neuronNum <= topology[layerNum]; ++neuronNum){
-            n_layers.back().push_back(Neuron()numOutputs, neuronNum); 
+            n_layers.back().push_back(Neuron(numOutputs, neuronNum)); 
             cout << "Neuron is made" << endl; 
         }
+
+        // force the bias node's output values to 1.0. 
+        n_layers.back().back().setOutputVal(1.0); 
     }
 }
 
