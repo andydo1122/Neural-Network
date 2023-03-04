@@ -237,30 +237,44 @@ int main(){
     topology.push_back(4);
     topology.push_back(1);
     Net myNet(topology);
-    
-    vector<double> inputVals;
-    inputVals.push_back(10);
-    inputVals.push_back(20);
-    myNet.feedForward(inputVals);
+    bool pass = false;
+    int count = 0;
 
-    // During training
-    cout << "Here at training" << endl;
-    vector<double> targetVals = inputVals;
-    targetVals.push_back(3);
-    targetVals.push_back(5);
-    targetVals.push_back(1);
-    targetVals.push_back(2);
-    myNet.backProp(targetVals);
-    cout << "BACK_PROP: ----" << endl;
-    for(int i = 0; i < targetVals.size(); ++i){
-        cout << targetVals[i] << endl;
+    while(!pass){
+        vector<double> inputVals;
+        int n1 = (int) (2.0 * rand() / double(RAND_MAX));
+        int n2 = (int) (2.0 * rand() / double(RAND_MAX));
+        double n3 = n1;
+        double n4 = n2; 
+        inputVals.push_back(n3);
+        inputVals.push_back(n2);
+        myNet.feedForward(inputVals);
+        cout << "INPUT VALUE----" << n3 << " " << n4 << endl;
+
+        // During training
+        cout << "Here at training" << endl;
+        vector<double> targetVals;
+        double target = (double) (n1^n2);
+        targetVals.push_back( target ); 
+        myNet.backProp(targetVals);
+        cout << "BACK_PROP: ----" << endl;
+        for(int i = 0; i < targetVals.size(); ++i){
+            cout << targetVals[i] << endl;
+        }
+
+        // Neural network's outputs
+        vector<double> resultVals;
+        myNet.getResults(resultVals);
+        cout << "RESULTS: ----" << endl;
+        for(int i = 0; i < resultVals.size(); ++i){
+            cout << resultVals[i] << endl;
+            if(resultVals[i] == target){
+                cout << "PASS" << endl;
+                pass = true; 
+            }
+        }
+        cout << "COUNT: " << count++ << endl; 
     }
 
-    // Neural network's outputs
-    vector<double> resultVals;
-    myNet.getResults(resultVals);
-    cout << "RESULTS: ----" << endl;
-    for(int i = 0; i < resultVals.size(); ++i){
-        cout << resultVals[i] << endl;
-    }
+    return 0;
 }
