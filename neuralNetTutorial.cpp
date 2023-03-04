@@ -22,16 +22,71 @@ class Neuron{
         void setOutputVal(double val){ n_outputVal = val;}
         double getOutputVal(void) {return n_outputVal;}
         void feedForward(const Layer &prevLayer);
+        void calcOutputGradients(double targetVal);
+        void calcHiddentGradients(const Layer &nextLayer);
+        void updateInputWeights(layer &prevLayer);
     
     private:
+        static double eta; // [0.0 ... 1.0] overall net training weight
+        static double alpha // [0.0... n] multiplier of last weight change(momentum)
+
         static double transferFunction(double x);
         static double transferFunctionDerivative(double x);
         static double randomWeight(void) { return rand() / double(RAND_MAX);}
+        double sumDOW(const Layer &nextLayer) const; 
         double n_outputVal;
         vector<Connection> n_outputWeights;
         unsigned n_myIndex;
+        double n_gradient; 
 
 };
+
+double Neuron::eta = 0.15; // overall net learning rate
+double Neuron::alpha = 0.5; // momentum, multiplier of last deltaWeight 
+
+void Neuron::updateInputWeights(Layer &prevLayer){
+    // the weights to be updated are in the connection container
+    // in the neurons in the preceding layer
+
+    for(unsigned n = 0; n < prevLayer.size(); ++n){
+        Neuron &neuron = prevLayer[n];
+        double oldDeltaWeight = neuron.n_outputWeights[n_myIndex].deltaWeights;
+
+        
+        double newDeltaWeight = 
+            // individual input. magnified by gradient and train rate;
+            eta 
+            * neuron_getOutputVal()
+            * n_gradient
+            // Also add momentum = a fraction of the previous delta weight
+            + alpha
+            * oldDeltaWeight;
+
+            neuron.n_outputWeights[n_myIndex].deltaWeight = newDeltaWeight;
+            neuron.n_outputWeights[n_myIndex].weight += newDeltaWeight; 
+    }
+}
+
+double Neuron::sumDOW(const Layer &nextLayer) const{
+    double sum = 0.0;
+
+    // Sum our contributions of erros at nodes we feed
+    for(unsigned n = 0; n < nextLayer.size() - 1; ++n){
+        sum += n_outputWeights[n].weight * nextLayer[n].n_gradient;
+    }
+
+    returb sum;
+}
+
+void Neuron::calcHiddentGradients(const Layer &nextLayer){
+    double dow = sumDOW(nextLayer);
+    n_gradient = dow * Neuron::transferFunctionDerivative(n_outputVal);
+}
+
+void Neuron::calcOutputGradients(double targetVal){
+    double delta = targetVal - n_outputVal;
+    n_gradient = delta * Neuron::transferFunctionDerivative(n_outputVal);
+}
 
 double Neuron:: transferFunction(double x){
     // tanh - output range (-1.0..1.0)
@@ -76,20 +131,64 @@ class Net{
 
     private:
         vector<Layer> n_layers; // n_layers[layerNum][neuronNum]
+        double n_error;
+        double n_recentAverageError;
+        double n_recentAverageSmoothingFactor;
+
 
 };
+
+void Net::getResults(vector<double> &resultVals) const {
+    resultVals.clear();
+
+    for(unsigned n = 0; n < n_layers.back().size() - 1; ++n){
+        resultVals.push_back(n_layers.back()[n].getOutputVal());
+    }
+}
 
 void Net::backProp(const vector<double> &targetVals){
     // Calculate overall net error(RMS/ROOT MEAN SQUARE of output neuron errors)
     Layer &outputLayer = n_layers.back();
-    n_error = 0.0
+    n_error = 0.0;
+
+    for(unsigned n = 0; n < outputLayer.size() - 1; ++n){
+        double delta = targetVals[n] - outputLayer[n].getOutputVal();
+        n_error += delta*delta;
+    }
+
+    n_error /= outputLayer.size() - 1; // get average error squared
+    n_error = sqrt(n_error); // RMS
+
+    // Implement recent average measurement;
+    n_recentAverageError = (n_recentAverageError* n_recentAverageSmoothingFactor + n_error)
+                            / (n_recentAverageSmoothingFactor + 1.0);
 
     // calculate output layer gradients
+    for(unsigned n = 0; n < outputLayer.size() - 1; ++n){
+        outputLayer[n].calcOutputGradients(targetVals[n]);
+    }
 
     // calculate gradients on hidden layers
+    for(unsigned layerNum = n_layers.size() - 2; layer> 0; --layerNum){
+        Layer &hiddenLayer = n_layers[layerNum];
+        Layer &nextLayer = n_layer[layerNum + 1];
+
+        for(unsigned n = 0; n < hiddenLayer.size(); ++n){
+            hiddenLayer[n].calcHiddenGradients(nextLayer);
+        }
+    }
 
     // for all layers from outputs to first hidden layer.
     // update conncection weights 
+    for(unsigned layerNum = n_layers.size() - 1; layerNum > 0; --layerNum){
+        Layer &layer = n_layers[layerNum];
+        Layer &prevLayer = n_layers[layerNum - 1];
+
+        for(unsigned n = 0; n < layer.size() - 1; ++n){
+            layer[n].updateInputWeights(prevLayer);
+        }
+
+    }
 
 }
 
